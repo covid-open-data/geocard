@@ -1,0 +1,79 @@
+{
+  "$schema": "https://vega.github.io/schema/vega-lite/v4.json",
+  "data": {"name": "main_data", "values": [] },
+  "width": 500,
+  "height": 250,
+  "autosize": "fit",
+  "encoding": {
+    "x": {
+      "field": "date", "type": "temporal",
+      "axis": {
+        "format": "%b %d", "values": [],
+        "tickColor": "lightgray"
+      },
+      "scale": {"domain": []}
+    }
+  },
+  "layer": [
+    {
+      "encoding": {
+        "color": {
+          "field": "source",
+          "type": "nominal",
+          "scale": {"domain": [], "range": []},
+          "legend": {
+            "symbolType": "stroke", "legendX": 1, "legendY": 8,
+            "orient": "none", "title": null, "fillColor": "#ffffff",
+            "padding": 2, "labelFontSize": 10, "symbolSize": 200
+          }
+        },
+        "y": {
+          "scale": {"domain": [], "clamp": true},
+          "field": "cases", "type": "quantitative",
+          "axis": {"tickColor": "lightgray"}
+        }
+      },
+      "layer": [
+        {"mark": {"type": "line", "point": true, "strokeJoin": "round"}},
+        {"transform": [{"filter": {"selection": "hover"}}], "mark": {"type": "point", "size": 100, "filled": true}}
+      ]
+    },
+    {
+      "transform": [{"pivot": "source", "value": "cases", "groupby": ["date"]}],
+      "mark": "rule",
+      "encoding": {
+        "opacity": {
+          "condition": {"value": 0.3, "selection": "hover"},
+          "value": 0
+        },
+        "tooltip": [
+          {"field": "date", "type": "temporal"}
+        ]
+      },
+      "selection": {
+        "hover": {
+          "type": "single",
+          "fields": ["date"],
+          "nearest": true,
+          "on": "mouseover",
+          "empty": "none",
+          "clear": "mouseout"
+        }
+      }
+    }
+  ],
+  "config": {
+    "view": {
+      "stroke": ""
+    },
+    "axis": {
+      "domain": false,
+      "labelFontSize": 12,
+      "titleFontSize": 14,
+      "titleFontWeight": "normal"
+    },
+    "text": {
+      "fontSize": 15
+    }
+  }
+}

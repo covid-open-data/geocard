@@ -1,0 +1,23 @@
+dependencies:
+  - name: style
+    version: 1.0
+    src: "htmlwidgets/lib/style"
+    stylesheet: style.css
+  - name: fonts
+    version: 1.0
+    src: "htmlwidgets/lib/fonts"
+    stylesheet: fonts.css
+  - name: multiselect
+    version: 0.0.1
+    src: htmlwidgets/lib/multiselect
+    stylesheet: multiselect.css
+    script:
+      - multiselect.js
+  - name: vega
+    version: 4.8.1
+    src: htmlwidgets/lib/vega
+    script: 
+      - vega.min.js
+      # - vega-5.10.0.min.js
+      # - vega-lite-4.8.1.min.js
+      # - vega-embed-6.5.1.min.js
