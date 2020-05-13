@@ -5,21 +5,6 @@ HTMLWidgets.widget({
     return {
       renderValue: function(x) {
         el.innerHTML = x.html;
-        var selectedCols = window.cur_trscope_selected_cols;
-        if (selectedCols === undefined) {
-          selectedCols = [1,2];
-        }
-        var myDrop = new drop({
-          el: el,
-          selector: '.multiselect',
-          preselected: selectedCols
-        });
-        myDrop.options.forEach(function(a, i) {
-          if (selectedCols.indexOf(i) < 0) {
-            var els = document.getElementsByClassName('dc-' + a.value);
-            [].forEach.call(els, function(x) { x.classList.add('hidden'); })
-          }
-        });
         var factor = width / 500;
         var dt = el.getElementsByClassName("data-table")[0];
         dt.setAttribute("style", `transform: scale(${factor},${factor}) translateX(-50%); transform-origin: top left;`);
@@ -67,6 +52,7 @@ HTMLWidgets.widget({
         agg.setAttribute("style", "left: " + (lft + 106) + "px; top: " + (dt.offsetTop + hgt + 2) + "px;");
         var yax = el.getElementsByClassName('yax-selector')[0];
         yax.setAttribute("style", "left: " + (lft + 106 + 63) + "px; top: " + (dt.offsetTop + hgt + 2) + "px;");
+        var hdvar = el.getElementsByClassName('hdvar-selector')[0];
         if (window.cur_trscope_vega_y_var !== undefined) {
           ysel.value = cur_trscope_vega_y_var;
         }
@@ -75,6 +61,9 @@ HTMLWidgets.widget({
         }
         if (window.cur_trscope_vega_yax !== undefined) {
           yax.value = cur_trscope_vega_yax;
+        }
+        if (window.cur_trscope_selected_hdvar !== undefined) {
+          hdvar.value = cur_trscope_selected_hdvar;
         }
         ysel.addEventListener('change', function(e) {
           window.cur_trscope_vega_y_var = e.target.value;
@@ -126,6 +115,30 @@ HTMLWidgets.widget({
         yax.addEventListener('passivechange', function(e) {
           makePlot(ysel.value, agg.value, yax.value);
         });
+
+        hdvar.addEventListener('change', function(e) {
+          window.cur_trscope_selected_hdvar = e.target.value;
+          var event = new Event('passivechange', {
+            bubbles: true,
+            cancelable: true,
+          });
+          var els = document.getElementsByClassName('hdvar-selector');
+          for (var i = 0; i < els.length; i++) {
+            els[i].value = e.target.value;
+            els[i].dispatchEvent(event);
+          }
+          hdvar.blur();          
+        })
+        hdvar.addEventListener('passivechange', function(e) {
+          var els = el.getElementsByClassName('data-row-data');
+          for (var ii = 0; ii < els.length; ii++) {
+            els[ii].classList.add('hidden');
+          }
+          var els2 = el.getElementsByClassName('data-row-' + e.target.value);
+          for (var ii = 0; ii < els.length; ii++) {
+            els2[ii].classList.remove('hidden');
+          }
+        })
 
         var curvar = window.cur_trscope_vega_y_var;
         if (curvar === undefined) {

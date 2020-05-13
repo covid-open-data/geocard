@@ -1,5 +1,6 @@
-get_ts_data <- function(data) {
+get_ts_data <- function(data, min_date) {
   cnms <- setdiff(names(data), c("source_url"))
+  data <- filter(data, date >= min_date)
   pdat <- data %>%
     dplyr::select(one_of(cnms)) %>%
     dplyr::group_by(source) %>%
@@ -14,7 +15,8 @@ get_ts_data <- function(data) {
 
   wpdat <- pdat %>%
     group_by(source) %>%
-    mutate(ind = tail(c(rep(1:(ceiling(n() / 7)), each = 7), 0), n())) %>%
+    # mutate(ind = tail(c(rep(1:(ceiling(n() / 7)), each = 7), 0), n())) %>%
+    mutate(ind = tail(rep(1:(ceiling(n() / 7)), each = 7), n())) %>%
     group_by(source, ind) %>%
     summarise(
       date = tail(date, 1),
@@ -41,6 +43,7 @@ geocard <- function(
   data,
   ref_source,
   geo_level,
+  geo_higher_level = NULL,
   y_domain = NULL,
   y_log_domain = NULL,
   case_fatality_max = 25,
@@ -65,17 +68,19 @@ geocard <- function(
     max_date <- max(x$date)
   max_date <- as.Date(max_date)
   if (is.null(min_date))
-    min_date <- max_date - (6 * 7)
+    min_date <- max_date - (8 * 7)
 
   cur_date_str <- format(max_date, "%b%d")
   prev_date_str <- format(max_date - 1, "%b%d")
 
   flag <- ""
+  if ("map_url" %in% names(data))
+    names(data)[names(data) == "map_url"] <- "flag_url"
   if ("flag_url" %in% names(data)) {
     flag <- tags$div(class = "no-flag")
     if (!is.na(data$flag_url))
       flag <- tags$img(src = data$flag_url,
-        alt = "flag", height = "33")
+        alt = "flag", height = "35")
   }
 
   cur_case_ref <- cg[[paste0("cur_case_", ref_id)]]
@@ -128,12 +133,18 @@ geocard <- function(
   if (is.null(moh) && is.null(twitter) && is.null(facebook))
     hide_links <- TRUE
 
-  tmp <- get_ts_data(data$data[[1]])
+  tmp <- get_ts_data(data$data[[1]], min_date)
   pdat <- tmp$pdat
   wpdat <- tmp$wpdat
 
   get_max_outl <- function(x) {
-    cutoff <- quantile(x, 0.75) + 5 * IQR(x)
+    iqr <- IQR(x)
+    iqr <- ifelse(iqr == 0, 1, iqr)
+    cutoff <- quantile(x, 0.95) + 8 * iqr
+    if (length(x) == 0)
+      return(NA)
+    if (length(x[x < cutoff]) == 0)
+      return(max(x, na.rm = TRUE))
     max(x[x < cutoff], na.rm = TRUE)
   }
 
@@ -182,8 +193,9 @@ geocard <- function(
   if (is.null(y_domain))
     y_domain <- c(0, maxes$cases)
 
-  vega_spec$encoding$x$axis$values <- max_date - 2 - (rep(0:5) * 7)
-  vega_spec$encoding$x$scale$domain <- c(min_date, max_date + 1)
+  vega_spec$encoding$x$axis$values <- max_date - 2 - (rep(0:7) * 7)
+  # vega_spec$encoding$x$scale$domain <- c(min_date, max_date + 1)
+  vega_spec$encoding$x$scale$domain <- c(min_date, max_date)
   vega_spec$layer[[1]]$encoding$y$scale$domain <- y_domain
 
   other_sources <- setdiff(srcs, ref_source)
@@ -220,12 +232,18 @@ geocard <- function(
     )
   }
 
+  card_name <- data[[geo_name]]
+  if (is.character(geo_higher_level)) {
+    card_name <- paste0(card_name, ", ",
+      data[[paste0(geo_higher_level, "_name")]])
+  }
+
   # Total   New   New    Day   Week   Per 100k
   # May10 May10 May09 Change Change Population
 
   obj <- tags$div(class = "container",
     new_entity_div,
-    tags$div(class = "entity_name", data[[geo_name]]),
+    tags$div(class = "entity_name", card_name),
     tags$div(class = "flag",
       flag
     ),
@@ -235,10 +253,10 @@ geocard <- function(
         tags$td(class = "data-cell dc-2", "Total",
           tags$br(),
           tags$span(class = "header-date", cur_date_str)),
-        tags$td(class = "data-cell dc-3", "New",
+        tags$td(class = "data-cell dc-3", "",
           tags$br(),
           tags$span(class = "header-date", prev_date_str)),
-        tags$td(class = "data-cell dc-4", "New",
+        tags$td(class = "data-cell dc-4", "",
           tags$br(),
           tags$span(class = "header-date", cur_date_str)),
         tags$td(class = "data-cell dc-5", "Day",
@@ -251,7 +269,8 @@ geocard <- function(
           tags$br(),
           tags$span(class = "header-date", "Population")),
       ),
-      lapply(srcs[1], function(src) {
+      lapply(seq_along(srcs), function(ii) {
+        src <- srcs[ii]
         lsrc <- tolower(src)
 
         b <- x %>%
@@ -288,8 +307,11 @@ geocard <- function(
         case_wk_ic <- get_icon_color(wk_stats$cases)
         death_wk_ic <- get_icon_color(wk_stats$deaths)
 
+        row_class <- paste0("data-row data-row-data data-row-", src,
+          ifelse(ii == 1, "", " hidden"))
+
         list(
-          tags$tr(class = "data-row",
+          tags$tr(class = row_class,
             tags$td(class = "data-cell dc-1",
               "Cases", tags$span(class = "icon-aid-kit")),
             tags$td(class = "data-cell dc-2",
@@ -311,7 +333,7 @@ geocard <- function(
             tags$td(class = "data-cell dc-4",
               na_dash(round(100000 * cur_cases / pop, 0)))
           ),
-          tags$tr(class = "data-row",
+          tags$tr(class = row_class,
             tags$td(class = "data-cell dc-1",
               "Deaths", tags$span(class = "icon-user-x")),
             tags$td(class = "data-cell dc-2",
@@ -356,14 +378,9 @@ geocard <- function(
       tags$option(value = "linear", "free linear axis"),
       tags$option(value = "log", "fixed log axis")
     ),
-    tags$div(
-      class = paste0("hdvar-selector",
-        ifelse(length(other_sources) > 2, "", " hidden")),
-      tags$select(
-        multiple = "multiple",
-        class = "form-group multiselect",
-        lapply(srcs, function(a) tags$option(value = a, a))
-      )
+    tags$select(
+      class = "hdvar-selector",
+      lapply(srcs, function(a) tags$option(value = a, a))
     ),
     tags$div(class = paste0("ref-links", ifelse(hide_links, " hidden", "")),
       "Official links: ",
