@@ -42,7 +42,7 @@ get_lims <- function(d) {
   wpdat <- pdat %>%
     dplyr::group_by(.data$source, .data$idx) %>%
     dplyr::mutate(
-      ind = tail(c(rep(1:(ceiling(n() / 7)), each = 7), 0), n())) %>%
+      ind = tail(c(rep(1:(ceiling(dplyr::n() / 7)), each = 7), 0), dplyr::n())) %>%
     dplyr::group_by(.data$source, .data$ind, .data$idx) %>%
     dplyr::summarise(
       date = tail(.data$date, 1),
@@ -51,10 +51,10 @@ get_lims <- function(d) {
       new_cases = sum(.data$new_cases),
       new_deaths = sum(.data$new_deaths),
       case_fatality_pct = ifelse(.data$cases == 0, 0, 100 * .data$deaths / .data$cases),
-      n = n()
+      n = dplyr::n()
     ) %>%
-    dplyr::filter(n == 7) %>%
-    dplyr::select(-n)
+    dplyr::filter(.data$n == 7) %>%
+    dplyr::select(-tidyselect::one_of("n"))
 
   lims$weekly$min <- wpdat %>%
     dplyr::ungroup() %>%

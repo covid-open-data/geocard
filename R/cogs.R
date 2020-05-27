@@ -72,7 +72,7 @@ get_cogs <- function(x, pop) {
 
   b <- x %>%
     dplyr::filter(.data$source == ref_source) %>%
-    dplyr::arrange(date) %>%
+    dplyr::arrange(.data$date) %>%
     utils::tail(15)
 
   wk_stats <- b %>%

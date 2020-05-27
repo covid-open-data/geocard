@@ -1,3 +1,4 @@
 ^_ignore$
 ^LICENSE\.md$
 ^data-raw$
+^\.github$
