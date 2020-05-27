@@ -13,15 +13,15 @@ get_lims <- function(d) {
   }))
 
   pdat <- tmp %>%
-    dplyr::group_by(source, idx) %>%
+    dplyr::group_by(.data$source, .data$idx) %>%
     dplyr::mutate(
-      new_cases = c(cases[1], diff(cases)),
-      new_deaths = c(deaths[1], diff(deaths)),
-      new_cases = ifelse(new_cases < 0, 0, new_cases),
-      new_deaths = ifelse(new_deaths < 0, 0, new_deaths),
-      case_fatality_pct = ifelse(cases == 0, 0, 100 * deaths / cases)
+      new_cases = c(.data$cases[1], diff(.data$cases)),
+      new_deaths = c(.data$deaths[1], diff(.data$deaths)),
+      new_cases = ifelse(.data$new_cases < 0, 0, .data$new_cases),
+      new_deaths = ifelse(.data$new_deaths < 0, 0, .data$new_deaths),
+      case_fatality_pct = ifelse(.data$cases == 0, 0, 100 * .data$deaths / .data$cases)
     ) %>%
-    dplyr::filter(date >= min(date[cases > 0]))
+    dplyr::filter(.data$date >= min(.data$date[.data$cases > 0]))
 
   nms <- c("cases", "deaths", "new_cases", "new_deaths", "case_fatality_pct")
 
@@ -40,17 +40,17 @@ get_lims <- function(d) {
     as.list()
 
   wpdat <- pdat %>%
-    dplyr::group_by(source, idx) %>%
+    dplyr::group_by(.data$source, .data$idx) %>%
     dplyr::mutate(
       ind = tail(c(rep(1:(ceiling(n() / 7)), each = 7), 0), n())) %>%
-    dplyr::group_by(source, ind, idx) %>%
+    dplyr::group_by(.data$source, .data$ind, .data$idx) %>%
     dplyr::summarise(
-      date = tail(date, 1),
-      cases = tail(cases, 1),
-      deaths = tail(deaths, 1),
-      new_cases = sum(new_cases),
-      new_deaths = sum(new_deaths),
-      case_fatality_pct = ifelse(cases == 0, 0, 100 * deaths / cases),
+      date = tail(.data$date, 1),
+      cases = tail(.data$cases, 1),
+      deaths = tail(.data$deaths, 1),
+      new_cases = sum(.data$new_cases),
+      new_deaths = sum(.data$new_deaths),
+      case_fatality_pct = ifelse(.data$cases == 0, 0, 100 * .data$deaths / .data$cases),
       n = n()
     ) %>%
     dplyr::filter(n == 7) %>%

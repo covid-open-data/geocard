@@ -6,14 +6,19 @@
 \usage{
 geocard(
   data,
-  ref_source,
-  geo_level,
-  geo_higher_level = NULL,
+  card_name,
+  cog = NULL,
+  population = NA,
+  ref_source = NULL,
   y_domain = NULL,
   y_log_domain = NULL,
   case_fatality_max = 25,
   max_date = NULL,
   min_date = NULL,
+  img_url = NULL,
+  feed_url = NULL,
+  twitter_account = NULL,
+  facebook_account = NULL,
   width = NULL,
   height = NULL,
   element_id = NULL
@@ -22,11 +27,13 @@ geocard(
 \arguments{
 \item{data}{TODO}
 
+\item{card_name}{TODO}
+
+\item{cog}{TODO}
+
+\item{population}{TODO}
+
 \item{ref_source}{TODO}
-
-\item{geo_level}{TODO}
-
-\item{geo_higher_level}{TODO}
 
 \item{y_domain}{TODO}
 
@@ -38,6 +45,14 @@ geocard(
 
 \item{min_date}{TODO}
 
+\item{img_url}{TODO}
+
+\item{feed_url}{TODO}
+
+\item{twitter_account}{TODO}
+
+\item{facebook_account}{TODO}
+
 \item{width}{TODO}
 
 \item{height}{TODO}
@@ -46,4 +61,13 @@ geocard(
 }
 \description{
 Create a geo card
+}
+\examples{
+geocard( 
+  wa_cases, 
+  card_name = "Washington", 
+  population = 7549403, 
+  ref_source = "NYT", 
+  img_url = "https://raw.githubusercontent.com/hafen/us-locator-maps/master/thumbs/admin1/US/53.png" 
+)
 }

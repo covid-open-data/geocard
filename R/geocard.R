@@ -1,49 +1,73 @@
 #' Create a geo card
 #'
 #' @param data TODO
+#' @param card_name TODO
+#' @param cog TODO
+#' @param population TODO
 #' @param ref_source TODO
-#' @param geo_level TODO
-#' @param geo_higher_level TODO
 #' @param y_domain TODO
 #' @param y_log_domain TODO
 #' @param case_fatality_max TODO
 #' @param max_date TODO
 #' @param min_date TODO
+#' @param img_url TODO
+#' @param feed_url TODO
+#' @param twitter_account TODO
+#' @param facebook_account TODO
 #' @param width TODO
 #' @param height TODO
 #' @param element_id TODO
+#'
 #' @import htmlwidgets
 #' @importFrom htmltools tags div tagList
 #' @importFrom stats IQR
 #' @importFrom jsonlite toJSON
 #' @importFrom ggthemes tableau_color_pal
 #' @importFrom stats quantile
+#' @importFrom tidyselect all_of
 #'
+#' @examples
+#' geocard( 
+#'   wa_cases, 
+#'   card_name = "Washington", 
+#'   population = 7549403, 
+#'   ref_source = "NYT", 
+#'   img_url = "https://raw.githubusercontent.com/hafen/us-locator-maps/master/thumbs/admin1/US/53.png" 
+#' )
 #' @export
 geocard <- function(
   data,
-  ref_source,
-  geo_level,
-  geo_higher_level = NULL,
+  card_name,
+  cog = NULL,
+  population = NA,
+  ref_source = NULL,
   y_domain = NULL,
   y_log_domain = NULL,
   case_fatality_max = 25,
-  max_date = NULL, min_date = NULL,
-  width = NULL, height = NULL, element_id = NULL
+  max_date = NULL,
+  min_date = NULL,
+  img_url = NULL,
+  feed_url = NULL,
+  twitter_account = NULL,
+  facebook_account = NULL,
+  width = NULL,
+  height = NULL,
+  element_id = NULL
 ) {
   chk <- function(x)
     if (length(x) == 0 || is.nan(x) || is.infinite(x)) NA else x
   get_new <- function(cur, prev)
     cur - ifelse(is.na(prev), 0, prev)
 
-  x <- data$data[[1]]
-  cg <- data$cogs[[1]]
-  pop <- data$population
+  x <- data
+  cg <- cog
+  pop <- population
+  if (is.null(cog)) {
+    message("Cognostics not supplied. Calculating...")
+    cg <- get_cogs(x, pop)
+  }
   ref_id <- tolower(ref_source)
   srcs <- levels(x$source)
-
-  geo_name <- paste0(geo_level, "_name")
-  geo_id <- paste0(geo_level, "_code")
 
   if (is.null(max_date))
     max_date <- max(x$date)
@@ -55,14 +79,18 @@ geocard <- function(
   prev_date_str <- format(max_date - 1, "%b%d")
 
   flag <- ""
-  if ("map_url" %in% names(data))
-    names(data)[names(data) == "map_url"] <- "flag_url"
-  if ("flag_url" %in% names(data)) {
-    flag <- tags$div(class = "no-flag")
-    if (!is.na(data$flag_url))
-      flag <- tags$img(src = data$flag_url,
-        alt = "flag", height = "35")
-  }
+  if (!is.null(img_url))
+    flag <- tags$img(src = img_url,
+      alt = "flag", height = "35")
+
+  # if ("map_url" %in% names(data))
+  #   names(data)[names(data) == "map_url"] <- "flag_url"
+  # if ("flag_url" %in% names(data)) {
+  #   flag <- tags$div(class = "no-flag")
+  #   if (!is.na(data$flag_url))
+  #     flag <- tags$img(src = data$flag_url,
+  #       alt = "flag", height = "35")
+  # }
 
   cur_case_ref <- cg[[paste0("cur_case_", ref_id)]]
   new_case_ref <- cg[[paste0("new_case_", ref_id)]]
@@ -73,7 +101,7 @@ geocard <- function(
 
   new_entity <- cg$new_entity
 
-  plot_id <- tolower(gsub(" ", "", data[[geo_id]]))
+  plot_id <- tolower(gsub(" ", "", gsub("[^[:alpha:]]", "_", card_name)))
 
   new_entity_div <- NULL
   if (length(new_entity) == 1 && new_entity == "yes")
@@ -114,7 +142,7 @@ geocard <- function(
   if (is.null(moh) && is.null(twitter) && is.null(facebook))
     hide_links <- TRUE
 
-  tmp <- get_ts_data(data$data[[1]], min_date)
+  tmp <- get_ts_data(data, min_date)
   pdat <- tmp$pdat
   wpdat <- tmp$wpdat
 
@@ -129,16 +157,18 @@ geocard <- function(
     max(x[x < cutoff], na.rm = TRUE)
   }
 
+  svars <- c("cases", "deaths", "new_cases", "new_deaths")
+
   maxes <- pdat %>%
     dplyr::ungroup() %>%
-    dplyr::select(cases, deaths, new_cases, new_deaths) %>%
+    dplyr::select(tidyselect::all_of(svars)) %>%
     dplyr::summarise_all(get_max_outl) %>%
     as.list()
   maxes$case_fatality_pct <- case_fatality_max
 
   wmaxes <- wpdat %>%
     dplyr::ungroup() %>%
-    dplyr::select(cases, deaths, new_cases, new_deaths) %>%
+    dplyr::select(tidyselect::all_of(svars)) %>%
     dplyr::summarise_all(get_max_outl) %>%
     as.list()
   wmaxes$case_fatality_pct <- case_fatality_max
@@ -182,8 +212,8 @@ geocard <- function(
   other_sources <- setdiff(srcs, ref_source)
 
   kosovo_text <- ""
-  if (grepl("Kosovo", data[[geo_name]])) {
-    data[[geo_name]] <- "Kosovo\u00b9"
+  if (grepl("Kosovo", card_name)) {
+    card_name <- "Kosovo\u00b9"
     kosovo_text <- "\u00b9In the context of the United Nations Security Council resolution 1244 (1999)"
   }
 
@@ -211,12 +241,6 @@ geocard <- function(
       icon = icon,
       color = color
     )
-  }
-
-  card_name <- data[[geo_name]]
-  if (is.character(geo_higher_level)) {
-    card_name <- paste0(card_name, ", ",
-      data[[paste0(geo_higher_level, "_name")]])
   }
 
   # Total   New   New    Day   Week   Per 100k
@@ -255,18 +279,18 @@ geocard <- function(
         lsrc <- tolower(src)
 
         b <- x %>%
-          dplyr::filter(source == src) %>%
-          dplyr::arrange(date) %>%
+          dplyr::filter(.data$source == src) %>%
+          dplyr::arrange(.data$date) %>%
           tail(15)
 
         wk_stats <- b %>%
           summarise(
-            cases = ifelse(dplyr::n() < 15 || (cases[8] - cases[1]) == 0, NA,
-              100 * ((cases[15] - cases[8]) - (cases[8] - cases[1])) /
-                (cases[8] - cases[1])),
-            deaths = ifelse(dplyr::n() < 15 || (deaths[8] - deaths[1]) == 0, NA,
-              100 * ((deaths[15] - deaths[8]) - (deaths[8] - deaths[1])) /
-                (deaths[8] - deaths[1])))
+            cases = ifelse(dplyr::n() < 15 || (.data$cases[8] - .data$cases[1]) == 0, NA,
+              100 * ((.data$cases[15] - .data$cases[8]) - (.data$cases[8] - .data$cases[1])) /
+                (.data$cases[8] - .data$cases[1])),
+            deaths = ifelse(dplyr::n() < 15 || (.data$deaths[8] - .data$deaths[1]) == 0, NA,
+              100 * ((.data$deaths[15] - .data$deaths[8]) - (.data$deaths[8] - .data$deaths[1])) /
+                (.data$deaths[8] - .data$deaths[1])))
 
         cur_cases <- as.numeric(cg[[paste0("cur_case_", lsrc)]])
         cur_deaths <- as.numeric(cg[[paste0("cur_death_", lsrc)]])
@@ -420,7 +444,7 @@ get_ts_data <- function(data, min_date) {
   data <- filter(data, date >= min_date)
   pdat <- data %>%
     dplyr::select(one_of(cnms)) %>%
-    dplyr::group_by(source) %>%
+    dplyr::group_by(.data$source) %>%
     dplyr::mutate(
       new_cases = c(cases[1], diff(cases)),
       new_deaths = c(deaths[1], diff(deaths)),
@@ -432,11 +456,11 @@ get_ts_data <- function(data, min_date) {
     dplyr::mutate(date = date + 1)
 
   wpdat <- pdat %>%
-    dplyr::group_by(source) %>%
+    dplyr::group_by(.data$source) %>%
     # mutate(ind = tail(c(rep(1:(ceiling(n() / 7)), each = 7), 0), n())) %>%
     dplyr::mutate(ind = tail(rep(1:(ceiling(dplyr::n() / 7)), each = 7),
       dplyr::n())) %>%
-    dplyr::group_by(source, ind) %>%
+    dplyr::group_by(.data$source, .data$ind) %>%
     dplyr::summarise(
       date = tail(date, 1),
       cases = tail(cases, 1),

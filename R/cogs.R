@@ -4,6 +4,7 @@
 #' @param pop TODO
 #' @export
 #' @importFrom dplyr filter summarise tally pull group_by arrange bind_cols tibble %>%
+#' @importFrom rlang .data :=
 #' @importFrom utils head tail
 get_cogs <- function(x, pop) {
   chk <- function(x)
@@ -62,27 +63,27 @@ get_cogs <- function(x, pop) {
   })
 
   n_reps <- x %>%
-    dplyr::filter(cases > 0) %>%
-    dplyr::group_by(source) %>%
+    dplyr::filter(.data$cases > 0) %>%
+    dplyr::group_by(.data$source) %>%
     dplyr::tally() %>%
-    dplyr::pull(n)
+    dplyr::pull("n")
   days_since_first_case <- max(n_reps)
   new_entity <- !any(n_reps > 1)
 
   b <- x %>%
-    dplyr::filter(source == ref_source) %>%
+    dplyr::filter(.data$source == ref_source) %>%
     dplyr::arrange(date) %>%
     utils::tail(15)
 
   wk_stats <- b %>%
     dplyr::summarise(
-      tot_case = ifelse(dplyr::n() < 15, NA, cases[15] - cases[1]),
-      cases = ifelse(dplyr::n() < 15 || (cases[8] - cases[1]) == 0, NA,
-        round(100 * ((cases[15] - cases[8]) - (cases[8] - cases[1])) /
-          (cases[8] - cases[1]), 1)),
-      deaths = ifelse(dplyr::n() < 15 || (deaths[8] - deaths[1]) == 0, NA,
-        100 * round(((deaths[15] - deaths[8]) - (deaths[8] - deaths[1])) /
-          (deaths[8] - deaths[1]), 1)))
+      tot_case = ifelse(dplyr::n() < 15, NA, .data$cases[15] - .data$cases[1]),
+      cases = ifelse(dplyr::n() < 15 || (.data$cases[8] - .data$cases[1]) == 0, NA,
+        round(100 * ((.data$cases[15] - .data$cases[8]) - (.data$cases[8] - .data$cases[1])) /
+          (.data$cases[8] - .data$cases[1]), 1)),
+      deaths = ifelse(dplyr::n() < 15 || (.data$deaths[8] - .data$deaths[1]) == 0, NA,
+        100 * round(((.data$deaths[15] - .data$deaths[8]) - (.data$deaths[8] - .data$deaths[1])) /
+          (.data$deaths[8] - .data$deaths[1]), 1)))
 
   last3 <- utils::head(utils::tail(b, 3), ifelse(nrow(b) <= 2, 0, 1))
   rnpc <- chk(get_new(rpc, last3$cases))
