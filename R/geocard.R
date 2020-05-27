@@ -1,42 +1,23 @@
-get_ts_data <- function(data, min_date) {
-  cnms <- setdiff(names(data), c("source_url"))
-  data <- filter(data, date >= min_date)
-  pdat <- data %>%
-    dplyr::select(one_of(cnms)) %>%
-    dplyr::group_by(source) %>%
-    dplyr::mutate(
-      new_cases = c(cases[1], diff(cases)),
-      new_deaths = c(deaths[1], diff(deaths)),
-      new_cases = ifelse(new_cases < 0, 0, new_cases),
-      new_deaths = ifelse(new_deaths < 0, 0, new_deaths),
-      case_fatality_pct = ifelse(cases == 0, 0, 100 * deaths / cases)
-    ) %>%
-    dplyr::filter(date >= min(date[cases > 0]))
-
-  wpdat <- pdat %>%
-    group_by(source) %>%
-    # mutate(ind = tail(c(rep(1:(ceiling(n() / 7)), each = 7), 0), n())) %>%
-    mutate(ind = tail(rep(1:(ceiling(n() / 7)), each = 7), n())) %>%
-    group_by(source, ind) %>%
-    summarise(
-      date = tail(date, 1),
-      cases = tail(cases, 1),
-      deaths = tail(deaths, 1),
-      new_cases = sum(new_cases),
-      new_deaths = sum(new_deaths),
-      case_fatality_pct = ifelse(cases == 0, 0, 100 * deaths / cases),
-      n = n()
-    ) %>%
-    filter(n == 7) %>%
-    select(-n)
-
-  list(pdat = pdat, wpdat = wpdat)
-}
-
 #' Create a geo card
 #'
+#' @param data TODO
+#' @param ref_source TODO
+#' @param geo_level TODO
+#' @param geo_higher_level TODO
+#' @param y_domain TODO
+#' @param y_log_domain TODO
+#' @param case_fatality_max TODO
+#' @param max_date TODO
+#' @param min_date TODO
+#' @param width TODO
+#' @param height TODO
+#' @param element_id TODO
 #' @import htmlwidgets
-#' @importFrom htmltools tags  div tagList
+#' @importFrom htmltools tags div tagList
+#' @importFrom stats IQR
+#' @importFrom jsonlite toJSON
+#' @importFrom ggthemes tableau_color_pal
+#' @importFrom stats quantile
 #'
 #' @export
 geocard <- function(
@@ -138,9 +119,9 @@ geocard <- function(
   wpdat <- tmp$wpdat
 
   get_max_outl <- function(x) {
-    iqr <- IQR(x)
+    iqr <- stats::IQR(x, na.rm = TRUE)
     iqr <- ifelse(iqr == 0, 1, iqr)
-    cutoff <- quantile(x, 0.95) + 8 * iqr
+    cutoff <- stats::quantile(x, 0.95, na.rm = TRUE) + 8 * iqr
     if (length(x) == 0)
       return(NA)
     if (length(x[x < cutoff]) == 0)
@@ -195,15 +176,15 @@ geocard <- function(
 
   vega_spec$encoding$x$axis$values <- max_date - 2 - (rep(0:7) * 7)
   # vega_spec$encoding$x$scale$domain <- c(min_date, max_date + 1)
-  vega_spec$encoding$x$scale$domain <- c(min_date, max_date)
+  vega_spec$encoding$x$scale$domain <- c(min_date, max_date) + 1
   vega_spec$layer[[1]]$encoding$y$scale$domain <- y_domain
 
   other_sources <- setdiff(srcs, ref_source)
 
   kosovo_text <- ""
   if (grepl("Kosovo", data[[geo_name]])) {
-    data[[geo_name]] <- "Kosovo¹"
-    kosovo_text <- "¹In the context of the United Nations Security Council resolution 1244 (1999)"
+    data[[geo_name]] <- "Kosovo\u00b9"
+    kosovo_text <- "\u00b9In the context of the United Nations Security Council resolution 1244 (1999)"
   }
 
   na_dash <- function(a)
@@ -253,10 +234,10 @@ geocard <- function(
         tags$td(class = "data-cell dc-2", "Total",
           tags$br(),
           tags$span(class = "header-date", cur_date_str)),
-        tags$td(class = "data-cell dc-3", "",
+        tags$td(class = "data-cell dc-3", "New",
           tags$br(),
           tags$span(class = "header-date", prev_date_str)),
-        tags$td(class = "data-cell dc-4", "",
+        tags$td(class = "data-cell dc-4", "New",
           tags$br(),
           tags$span(class = "header-date", cur_date_str)),
         tags$td(class = "data-cell dc-5", "Day",
@@ -432,4 +413,41 @@ geocard <- function(
       defaultHeight = 415
     )
   )
+}
+
+get_ts_data <- function(data, min_date) {
+  cnms <- setdiff(names(data), c("source_url"))
+  data <- filter(data, date >= min_date)
+  pdat <- data %>%
+    dplyr::select(one_of(cnms)) %>%
+    dplyr::group_by(source) %>%
+    dplyr::mutate(
+      new_cases = c(cases[1], diff(cases)),
+      new_deaths = c(deaths[1], diff(deaths)),
+      new_cases = ifelse(new_cases < 0, 0, new_cases),
+      new_deaths = ifelse(new_deaths < 0, 0, new_deaths),
+      case_fatality_pct = ifelse(cases == 0, 0, 100 * deaths / cases)
+    ) %>%
+    # dplyr::filter(date >= min(date[cases > 0])) %>%
+    dplyr::mutate(date = date + 1)
+
+  wpdat <- pdat %>%
+    dplyr::group_by(source) %>%
+    # mutate(ind = tail(c(rep(1:(ceiling(n() / 7)), each = 7), 0), n())) %>%
+    dplyr::mutate(ind = tail(rep(1:(ceiling(dplyr::n() / 7)), each = 7),
+      dplyr::n())) %>%
+    dplyr::group_by(source, ind) %>%
+    dplyr::summarise(
+      date = tail(date, 1),
+      cases = tail(cases, 1),
+      deaths = tail(deaths, 1),
+      new_cases = sum(new_cases),
+      new_deaths = sum(new_deaths),
+      case_fatality_pct = ifelse(cases == 0, 0, 100 * deaths / cases),
+      n = dplyr::n()
+    ) %>%
+    dplyr::filter(n == 7) %>%
+    dplyr::select(-n)
+
+  list(pdat = pdat, wpdat = wpdat)
 }

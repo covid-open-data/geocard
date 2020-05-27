@@ -1,3 +1,7 @@
+#' Get limits
+#' 
+#' @param d TODO
+#' @importFrom dplyr one_of
 #' @export
 get_lims <- function(d) {
   if (!inherits(d, "casecounts"))
@@ -25,13 +29,13 @@ get_lims <- function(d) {
 
   lims$daily$min <- pdat %>%
     dplyr::ungroup() %>%
-    dplyr::select(tidyselect::one_of(nms)) %>%
+    dplyr::select(dplyr::one_of(nms)) %>%
     dplyr::summarise_all(function(x) max(c(min(x), 1))) %>%
     as.list()
 
   lims$daily$max <- pdat %>%
     dplyr::ungroup() %>%
-    dplyr::select(tidyselect::one_of(nms)) %>%
+    dplyr::select(dplyr::one_of(nms)) %>%
     dplyr::summarise_all(max) %>%
     as.list()
 
@@ -54,13 +58,13 @@ get_lims <- function(d) {
 
   lims$weekly$min <- wpdat %>%
     dplyr::ungroup() %>%
-    dplyr::select(tidyselect::one_of(nms)) %>%
+    dplyr::select(dplyr::one_of(nms)) %>%
     dplyr::summarise_all(function(x) max(c(min(x), 1))) %>%
     as.list()
 
   lims$weekly$max <- wpdat %>%
     dplyr::ungroup() %>%
-    dplyr::select(tidyselect::one_of(nms)) %>%
+    dplyr::select(dplyr::one_of(nms)) %>%
     dplyr::summarise_all(max) %>%
     as.list()
 

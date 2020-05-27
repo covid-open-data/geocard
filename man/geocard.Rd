@@ -8,6 +8,7 @@ geocard(
   data,
   ref_source,
   geo_level,
+  geo_higher_level = NULL,
   y_domain = NULL,
   y_log_domain = NULL,
   case_fatality_max = 25,
@@ -17,6 +18,31 @@ geocard(
   height = NULL,
   element_id = NULL
 )
+}
+\arguments{
+\item{data}{TODO}
+
+\item{ref_source}{TODO}
+
+\item{geo_level}{TODO}
+
+\item{geo_higher_level}{TODO}
+
+\item{y_domain}{TODO}
+
+\item{y_log_domain}{TODO}
+
+\item{case_fatality_max}{TODO}
+
+\item{max_date}{TODO}
+
+\item{min_date}{TODO}
+
+\item{width}{TODO}
+
+\item{height}{TODO}
+
+\item{element_id}{TODO}
 }
 \description{
 Create a geo card
