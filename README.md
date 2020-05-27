@@ -5,7 +5,7 @@
 [![R build status](https://github.com/covid-open-data/geocard/workflows/R-CMD-check/badge.svg)](https://github.com/covid-open-data/geocard/actions)
 <!-- badges: end -->
 
-The goal of geocard is to ...
+R package that creates an interactive visualization of the progression of case counts for a given geographic entity. Used in COVID-19 case counts displays.
 
 ## Installation
 
@@ -14,8 +14,6 @@ remotes::install_github("covid-open-data/geocard")
 ```
 
 ## Example
-
-This is a basic example which shows you how to solve a common problem:
 
 ``` r
 library(geocard)
