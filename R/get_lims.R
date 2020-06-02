@@ -4,8 +4,9 @@
 #' @importFrom dplyr one_of
 #' @export
 get_lims <- function(d) {
-  if (!inherits(d, "casecounts"))
-    stop("Data must be of class 'casecounts'.")
+  # TODO: check that the object is valid
+  # if (!inherits(d, "casecounts"))
+  #   stop("Data must be of class 'casecounts'.")
 
   tmp <- dplyr::bind_rows(lapply(seq_len(nrow(d)), function(i) {
     d$data[[i]]$idx <- i
