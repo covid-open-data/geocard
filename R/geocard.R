@@ -198,8 +198,8 @@ geocard <- function(
   vega_spec$layer[[2]]$encoding$tooltip <- c(
     vega_spec$layer[[2]]$encoding$tooltip,
     ttp)
-  vega_spec$layer[[1]]$encoding$color$scale$domain <- pnms
-  vega_spec$layer[[1]]$encoding$color$scale$range <- unname(cols[pnms])
+  vega_spec$layer[[1]]$encoding$color$scale$domain <- I(pnms)
+  vega_spec$layer[[1]]$encoding$color$scale$range <- I(unname(cols[pnms]))
 
   if (is.null(y_domain))
     y_domain <- c(0, maxes$cases)
