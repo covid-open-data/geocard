@@ -22,17 +22,17 @@ get_cogs <- function(x, pop) {
 
     dplyr::tibble(
       !!paste0("cur_case_", id) := trelliscopejs::cog(chk(last$cases),
-        desc = paste0("Total cases (", a, ")")),
+        desc = paste0("Total cases (", a, ")"), type = "numeric"),
       !!paste0("cur_death_", id) := trelliscopejs::cog(chk(last$deaths),
-        desc = paste0("Total deaths (", a, ")")),
+        desc = paste0("Total deaths (", a, ")"), type = "numeric"),
       !!paste0("prev_case_", id) := trelliscopejs::cog(chk(last2$cases),
-        desc = paste0("Prior day cases (", a, ")")),
+        desc = paste0("Prior day cases (", a, ")"), type = "numeric"),
       !!paste0("prev_death_", id) := trelliscopejs::cog(chk(last2$deaths),
-        desc = paste0("Prior day deaths (", a, ")")),
+        desc = paste0("Prior day deaths (", a, ")"), type = "numeric"),
       !!paste0("new_case_", id) := trelliscopejs::cog(chk(get_new(last$cases, last2$cases)),
-        desc = paste0("New cases (", a, ")")),
+        desc = paste0("New cases (", a, ")"), type = "numeric"),
       !!paste0("new_death_", id) := trelliscopejs::cog(chk(get_new(last$deaths, last2$deaths)),
-        desc = paste0("New deaths (", a, ")")),
+        desc = paste0("New deaths (", a, ")"), type = "numeric"),
     )
   })
   names(each_cog) <- levels(x$source)
@@ -55,10 +55,10 @@ get_cogs <- function(x, pop) {
     tibble(
       !!paste0("case_abs_diff_", id) := trelliscopejs::cog(abs(rcc - cc),
         desc = paste0("Absolute difference between ",
-          a, " and ", ref_source, " cases")),
+          a, " and ", ref_source, " cases"), type = "numeric"),
       !!paste0("death_abs_diff_", id) := trelliscopejs::cog(abs(rcd - cd),
         desc = paste0("Absolute difference between ",
-          a, " and ", ref_source, " deaths"))
+          a, " and ", ref_source, " deaths"), type = "numeric")
     )
   })
 
