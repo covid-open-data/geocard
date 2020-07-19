@@ -441,13 +441,13 @@ geocard <- function(
 
 get_ts_data <- function(data, min_date) {
   cnms <- setdiff(names(data), c("source_url"))
-  data <- filter(data, date >= min_date)
+
   pdat <- data %>%
     dplyr::select(one_of(cnms)) %>%
     dplyr::group_by(.data$source) %>%
     dplyr::mutate(
-      new_cases = c(.data$cases[1], diff(.data$cases)),
-      new_deaths = c(.data$deaths[1], diff(.data$deaths)),
+      new_cases = c(NA, diff(.data$cases)),
+      new_deaths = c(NA, diff(.data$deaths)),
       new_cases = ifelse(.data$new_cases < 0, 0, .data$new_cases),
       new_deaths = ifelse(.data$new_deaths < 0, 0, .data$new_deaths),
       case_fatality_pct = ifelse(.data$cases == 0, 0, 100 * .data$deaths / .data$cases)
@@ -472,6 +472,9 @@ get_ts_data <- function(data, min_date) {
     ) %>%
     dplyr::filter(.data$n == 7) %>%
     dplyr::select(-tidyselect::one_of("n"))
+
+  pdat <- dplyr::filter(pdat, date >= min_date)
+  wpdat <- dplyr::filter(wpdat, date >= min_date)
 
   list(pdat = pdat, wpdat = wpdat)
 }
