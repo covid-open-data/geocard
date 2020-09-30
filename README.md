@@ -2,7 +2,7 @@
 # geocard
 
 <!-- badges: start -->
-[![R build status](https://github.com/covid-open-data/geocard/workflows/R-CMD-check/badge.svg)](https://github.com/covid-open-data/geocard/actions)
+[![R build status](https://github.com/WorldHealthOrganization/geocard/workflows/R-CMD-check/badge.svg)](https://github.com/WorldHealthOrganization/geocard/actions)
 <!-- badges: end -->
 
 R package that creates an interactive visualization of the progression of case counts for a given geographic entity. Used in COVID-19 case counts displays.
@@ -10,7 +10,7 @@ R package that creates an interactive visualization of the progression of case c
 ## Installation
 
 ``` r
-remotes::install_github("covid-open-data/geocard")
+remotes::install_github("WorldHealthOrganization/geocard")
 ```
 
 ## Example
