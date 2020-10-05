@@ -25,45 +25,45 @@ geocard(
 )
 }
 \arguments{
-\item{data}{TODO}
+\item{data}{A long-format data frame with columns: "date", "cases", "deaths", "source".}
 
-\item{card_name}{TODO}
+\item{card_name}{Name to display at the top of the geocard.}
 
-\item{cog}{TODO}
+\item{cog}{A data frame containing "cognostics" about the the geocard. If not supplied, it will be calculated using \code{\link{get_cogs}}.}
 
-\item{population}{TODO}
+\item{population}{Optional population of the geographic entity being plotted (used to populate the "per 100k population" statistics in the card).}
 
-\item{ref_source}{TODO}
+\item{ref_source}{Which source should be used as the reference (default) source? The reference source is the source with which other sources will be compared. It should match one of the values in the "source" column of the provided data.}
 
-\item{y_domain}{TODO}
+\item{y_domain}{An optional custom y domain (if not specified, will be from 0 to the range of the data).}
 
-\item{y_log_domain}{TODO}
+\item{y_log_domain}{An optional custom y domain when viewing on the log scale.}
 
-\item{case_fatality_max}{TODO}
+\item{case_fatality_max}{A cutoff for the y axis when showing case fatality percentage - useful when some entities have outlying values.}
 
-\item{max_date}{TODO}
+\item{max_date}{An optional maximum date to show in the plot. Defaults to latest.}
 
-\item{min_date}{TODO}
+\item{min_date}{An optional minimum date to show in the plot. Defaults to 8 weeks prior to \code{max_date}.}
 
-\item{img_url}{TODO}
+\item{img_url}{An optional URL to use to display an image in the header bar of the geocard, which can be useful as a quick visual reference cue when scanning multiple geocards at once.}
 
-\item{feed_url}{TODO}
+\item{feed_url}{An optional vector of URLS pointing to RSS feeds from the entity's source.}
 
-\item{twitter_account}{TODO}
+\item{twitter_account}{An optional vector of URLS pointing to twitter feeds from the entity's source.}
 
-\item{facebook_account}{TODO}
+\item{facebook_account}{An optional vector of URLS pointing to Facebook from the entity's source.}
 
-\item{width}{TODO}
+\item{width}{Optional card height in pixels}
 
-\item{height}{TODO}
+\item{height}{Optional card width in pixels}
 
-\item{element_id}{TODO}
+\item{element_id}{Optional htmlwidget element ID.}
 }
 \description{
 Create a geo card
 }
 \examples{
-geocard( 
+geocard(
   wa_cases, 
   card_name = "Washington", 
   population = 7549403, 

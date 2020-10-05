@@ -1,18 +1,32 @@
 #' Compute cognostics for a geographic entity
-#' 
-#' @param x TODO
-#' @param pop TODO
+#'
+#' @param x A long-format data frame with columns: "date", "cases", "deaths", "source".
+#' @param pop Optional population of the geographic entity being plotted (used to populate the "per 100k population" statistics in the card).
+#' @param ref_source Which source should be used as the reference (default) source? The reference source is the source with which other sources will be compared. It should match one of the values in the "source" column of the provided data.
+#' @examples
+#' get_cogs(wa_cases, ref_source = "NYT")
 #' @export
 #' @importFrom dplyr filter summarise tally pull group_by arrange bind_cols tibble %>%
 #' @importFrom rlang .data :=
 #' @importFrom utils head tail
-get_cogs <- function(x, pop) {
+get_cogs <- function(x, pop, ref_source = NULL) {
   chk <- function(x)
     if (length(x) == 0 || is.nan(x) || is.infinite(x)) NA else x
   get_new <- function(cur, prev)
     cur - ifelse(is.na(prev), 0, prev)
 
-  ref_source <- levels(x$source)[1]
+  chk_nms <- c("date", "cases", "deaths", "source")
+  if (! all(chk_nms %in% names(x)))
+    stop("Data supplied to get_cogs() must have columns: ",
+      paste(chk_nms, collapse = ", "), call. = FALSE)
+
+  if (!is.factor(x$source))
+    x$source <- factor(x$source)
+  if (is.null(ref_source)) {
+    ref_source <- levels(x$source)[1]
+  } else {
+    levels(x$source) <- c(ref_source, setdiff(levels(x$source), ref_source))
+  }
 
   each_cog <- lapply(levels(x$source), function(a) {
     id <- tolower(a)

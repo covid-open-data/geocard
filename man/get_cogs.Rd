@@ -4,13 +4,18 @@
 \alias{get_cogs}
 \title{Compute cognostics for a geographic entity}
 \usage{
-get_cogs(x, pop)
+get_cogs(x, pop, ref_source = NULL)
 }
 \arguments{
-\item{x}{TODO}
+\item{x}{A long-format data frame with columns: "date", "cases", "deaths", "source".}
 
-\item{pop}{TODO}
+\item{pop}{Optional population of the geographic entity being plotted (used to populate the "per 100k population" statistics in the card).}
+
+\item{ref_source}{Which source should be used as the reference (default) source? The reference source is the source with which other sources will be compared. It should match one of the values in the "source" column of the provided data.}
 }
 \description{
 Compute cognostics for a geographic entity
+}
+\examples{
+get_cogs(wa_cases, ref_source = "NYT")
 }

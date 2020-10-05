@@ -1,22 +1,22 @@
 #' Create a geo card
 #'
-#' @param data TODO
-#' @param card_name TODO
-#' @param cog TODO
-#' @param population TODO
-#' @param ref_source TODO
-#' @param y_domain TODO
-#' @param y_log_domain TODO
-#' @param case_fatality_max TODO
-#' @param max_date TODO
-#' @param min_date TODO
-#' @param img_url TODO
-#' @param feed_url TODO
-#' @param twitter_account TODO
-#' @param facebook_account TODO
-#' @param width TODO
-#' @param height TODO
-#' @param element_id TODO
+#' @param data A long-format data frame with columns: "date", "cases", "deaths", "source".
+#' @param card_name Name to display at the top of the geocard.
+#' @param cog A data frame containing "cognostics" about the the geocard. If not supplied, it will be calculated using \code{\link{get_cogs}}.
+#' @param population Optional population of the geographic entity being plotted (used to populate the "per 100k population" statistics in the card).
+#' @param ref_source Which source should be used as the reference (default) source? The reference source is the source with which other sources will be compared. It should match one of the values in the "source" column of the provided data.
+#' @param y_domain An optional custom y domain (if not specified, will be from 0 to the range of the data).
+#' @param y_log_domain An optional custom y domain when viewing on the log scale.
+#' @param case_fatality_max A cutoff for the y axis when showing case fatality percentage - useful when some entities have outlying values.
+#' @param max_date An optional maximum date to show in the plot. Defaults to latest.
+#' @param min_date An optional minimum date to show in the plot. Defaults to 8 weeks prior to \code{max_date}.
+#' @param img_url An optional URL to use to display an image in the header bar of the geocard, which can be useful as a quick visual reference cue when scanning multiple geocards at once.
+#' @param feed_url An optional vector of URLS pointing to RSS feeds from the entity's source.
+#' @param twitter_account An optional vector of URLS pointing to twitter feeds from the entity's source.
+#' @param facebook_account An optional vector of URLS pointing to Facebook from the entity's source.
+#' @param width Optional card height in pixels
+#' @param height Optional card width in pixels
+#' @param element_id Optional htmlwidget element ID.
 #'
 #' @import htmlwidgets
 #' @importFrom htmltools tags div tagList
@@ -27,7 +27,7 @@
 #' @importFrom tidyselect all_of
 #'
 #' @examples
-#' geocard( 
+#' geocard(
 #'   wa_cases, 
 #'   card_name = "Washington", 
 #'   population = 7549403, 
@@ -59,6 +59,11 @@ geocard <- function(
   get_new <- function(cur, prev)
     cur - ifelse(is.na(prev), 0, prev)
 
+  chk_nms <- c("date", "cases", "deaths", "source")
+  if (! all(chk_nms %in% names(data)))
+    stop("Data supplied to geocard() must have columns: ",
+      paste(chk_nms, collapse = ", "), call. = FALSE)
+
   x <- data
   cg <- cog
   pop <- population
@@ -66,7 +71,11 @@ geocard <- function(
     message("Cognostics not supplied. Calculating...")
     cg <- get_cogs(x, pop)
   }
-  ref_id <- tolower(ref_source)
+  if (!is.factor(x$source))
+    x$source <- factor(x$source)
+  if (is.null(ref_source))
+    ref_source <- levels(x$source)[1]
+  levels(x$source) <- c(ref_source, setdiff(levels(x$source), ref_source))
   srcs <- levels(x$source)
 
   if (is.null(max_date))
@@ -92,13 +101,6 @@ geocard <- function(
   #       alt = "flag", height = "35")
   # }
 
-  cur_case_ref <- cg[[paste0("cur_case_", ref_id)]]
-  new_case_ref <- cg[[paste0("new_case_", ref_id)]]
-  cur_death_ref <- cg[[paste0("cur_death_", ref_id)]]
-  new_death_ref <- cg[[paste0("new_death_", ref_id)]]
-  prev_case_ref <- cg[[paste0("prev_case_", ref_id)]]
-  prev_death_ref <- cg[[paste0("prev_death_", ref_id)]]
-
   new_entity <- cg$new_entity
 
   plot_id <- tolower(gsub(" ", "", gsub("[^[:alpha:]]", "_", card_name)))
@@ -121,20 +123,20 @@ geocard <- function(
   }
 
   moh <- NULL
-  if ("feed_url" %in% names(data)) {
-    moh <- data$feed_url[[1]]
+  if (!is.null(feed_url)) {
+    moh <- feed_url
     moh <- get_ref_tags(moh, "icon-feed")
   }
 
   twitter <- NULL
-  if ("twitter_account" %in% names(data)) {
-    twitter <- data$twitter_account[[1]]
+  if (!is.null(twitter_account)) {
+    twitter <- twitter_account
     twitter <- get_ref_tags(twitter, "icon-twitter")
   }
 
   facebook <- NULL
-  if ("facebook_account" %in% names(data)) {
-    facebook <- data$facebook_account[[1]]
+  if (!is.null(facebook_account)) {
+    facebook <- facebook_account
     facebook <- get_ref_tags(facebook, "icon-facebook")
   }
 
@@ -204,8 +206,10 @@ geocard <- function(
   if (is.null(y_domain))
     y_domain <- c(0, maxes$cases)
 
-  vega_spec$encoding$x$axis$values <- max_date - 2 - (rep(0:7) * 7)
-  # vega_spec$encoding$x$scale$domain <- c(min_date, max_date + 1)
+  wks <- as.integer(max_date - min_date) / 7
+  vega_spec$encoding$x$axis$values <- pretty(c(min_date, max_date), 6)
+  # vega_spec$encoding$x$axis$values <- max_date - 2 - (rep(0:7) * 7)
+  # # vega_spec$encoding$x$scale$domain <- c(min_date, max_date + 1)
   vega_spec$encoding$x$scale$domain <- c(min_date, max_date) + 1
   vega_spec$layer[[1]]$encoding$y$scale$domain <- y_domain
 
@@ -252,6 +256,7 @@ geocard <- function(
     tags$div(class = "flag",
       flag
     ),
+    tags$a(class = "card-csv", "csv"),
     tags$table(class = "data-table",
       tags$tr(class = "data-row data-row-header",
         tags$td(class = "data-cell dc-1"),
@@ -443,7 +448,7 @@ get_ts_data <- function(data, min_date) {
   cnms <- setdiff(names(data), c("source_url"))
 
   pdat <- data %>%
-    dplyr::select(one_of(cnms)) %>%
+    dplyr::select(dplyr::one_of(cnms)) %>%
     dplyr::group_by(.data$source) %>%
     dplyr::mutate(
       new_cases = c(NA, diff(.data$cases)),
